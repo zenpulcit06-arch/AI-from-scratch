@@ -2,15 +2,15 @@ module Linear_regression
     implicit none
 
     private 
-    public fit , standardize
+    public fit , standardize , sigmoid
     
 contains
-subroutine fit(y,x,size_of_data, rate_of_learn, n_feature , weight , bias,iteration ,mse)
+subroutine fit(y,x,size_of_data, rate_of_learn, n_feature , weight , bias,iteration ,loss,mse)
     use, intrinsic :: iso_fortran_env
 
     implicit none
     real(real64), intent(inout) :: y(:) ,x(: , :), bias 
-    real(real64), intent(inout) :: mse
+    real(real64), intent(inout) :: loss , mse
     real(real64), intent(in) :: rate_of_learn 
     integer(int64), intent(in) :: size_of_data, iteration, n_feature
     integer :: i
@@ -23,18 +23,20 @@ subroutine fit(y,x,size_of_data, rate_of_learn, n_feature , weight , bias,iterat
     allocate(y_predicted(size_of_data))
 
     do i = 1,iteration
-        y_predicted = matmul(x,weight) + bias
+        y_predicted = sigmoid(matmul(x,weight) + bias)
 
-        dw = (-2.0_real64/size_of_data)*matmul(transpose(x), y_predicted - y)
-        db = (-2.0_real64/size_of_data)*sum(y_predicted - y)
+        dw = (1.0_real64/size_of_data)*matmul(transpose(x), y_predicted - y)
+        db = (1.0_real64/size_of_data)*sum(y_predicted - y)
 
-        weight = weight + rate_of_learn*dw
-        bias = bias + rate_of_learn*db
+        weight = weight - rate_of_learn*dw
+        bias = bias - rate_of_learn*db
 
     end do
 
-    y_predicted = matmul(x,weight) + bias
+    y_predicted = sigmoid(matmul(x,weight) + bias)
     mse = sum((y_predicted - y)**2)/size_of_data
+
+    loss = -sum(y * log(y_predicted + 1.0e-15_real64) + (1.0_real64 - y) * log(1.0_real64 - y_predicted + 1.0e-15_real64)) / size_of_data
 
     deallocate(y_predicted)
 
@@ -64,6 +66,16 @@ subroutine standardize(x,n_feature, size_of_data,mean,sd , z_score)
 
 end subroutine standardize
 
+elemental function sigmoid(z) result(sigma)
+    use, intrinsic :: iso_fortran_env
+
+    implicit none
+    real(real64), intent(in) :: z
+    real(real64):: sigma
+
+    sigma = 1.0_real64/(1.0_real64 + exp(-z))
+end function 
+
 end module Linear_regression
 program main
     use, intrinsic :: iso_fortran_env
@@ -73,7 +85,7 @@ program main
     integer(int64) :: size_of_data,i,iteration,mode, n_feature , j
     real(real64), allocatable :: y(:) , x(:,:) , x_scalled(:,:)
     real(real64) :: y_predition,rate_of_learn, bias
-    real(real64) :: mse
+    real(real64) :: loss , mse
     real(real64), allocatable :: weight(:), x_input(:) , mean(:), sd(:)
     character(len = 1000):: filename
 
@@ -133,13 +145,15 @@ program main
     print *, 'scalling data'
     call standardize(x,n_feature,size_of_data,mean,sd,x_scalled)
     print *, 'fitting the plot.....'
-    call fit(y,x_scalled,size_of_data,rate_of_learn,n_feature,weight,bias,iteration,mse)
+    call fit(y,x_scalled,size_of_data,rate_of_learn,n_feature,weight,bias,iteration,loss,mse)
     mode = 0
 
     print *, 'mean =', mean
     print *, 's.d. =', sd
     print *, 'weight =', weight
+    print *, 'loss =', loss
     print *, 'mse =', mse
+
 
     do while (.true.)
         print *,'enter 1 to exit or enter 2 to continue'
@@ -156,9 +170,18 @@ program main
         end do
         
         x_input = (x_input - mean)/sd
-        y_predition = dot_product(weight,x_input) + bias
+        y_predition = sigmoid(dot_product(weight,x_input) + bias)
 
         print *, 'Your predicted value', y_predition
+
+        print *, 'Probability of Class 1:', y_predition
+        
+        if (y_predition >= 0.5_real64) then
+            print *, 'Classification: POSITIVE (1)'
+        else
+            print *, 'Classification: NEGATIVE (0)'
+        end if
+
     end do
 
     print *, 'Press enter to close terminal'
