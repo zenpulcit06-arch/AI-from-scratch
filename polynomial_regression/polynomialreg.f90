@@ -29,6 +29,7 @@ program main
     implicit none
     real(real64), allocatable :: x(:), y(:), x_poly(: , :), x_scaled(: , :), sd(:), weight(:), mean(:),x_input(:)
     real(real64) :: bias, rate_of_learn, loss, mse, x_val, y_prediction
+    real(real64) :: lamda
     integer(int64) :: degree, sample_size, iteration, mode, i,j
     character(len = 1000) :: filename
     
@@ -37,6 +38,9 @@ program main
 
     print *, 'Enter rate of learning'
     read(*,*) rate_of_learn
+
+    print *, 'Enter lamda'
+    read(*,*) lamda
 
     print *, 'Enter iteration'
     read(*,*) iteration
@@ -80,7 +84,7 @@ program main
     call standardize(x_poly,degree,sample_size,mean,sd,x_scaled)
 
     print *, 'Fitting.....'
-    call fit(y,x_scaled,sample_size,rate_of_learn,degree,weight,bias,iteration,loss,mse)
+    call fit(y,x_scaled,sample_size,rate_of_learn,degree,weight,bias,iteration,loss,mse,lamda)
 
     print *, 'mean = ', mean
     print *, 'bias = ', bias
