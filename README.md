@@ -1,6 +1,6 @@
 # 🤖 AI From Scratch: Vectorized Polynomial & Logistic Regression (Fortran)
 
-**Author:** Pulkit Jain — BITS Pilani | Mathematics & Computing · Physics
+**Author:** Pulkit Jain — BITS Pilani |  Physics
 
 > A low-level Machine Learning engine built in Modern Fortran — no PyTorch, no Scikit-Learn, just raw matrix calculus, gradient descent, and feature engineering.
 
