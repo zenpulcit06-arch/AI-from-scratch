@@ -1,17 +1,35 @@
-# 🤖 AI From Scratch: Polynomial Logistic Regression (Fortran)
+# 🤖 AI From Scratch: Vectorized Polynomial & Logistic Regression (Fortran)
 
-> Part of a series on building Artificial Intelligence from the ground up using low-level languages — no Scikit-Learn, no TensorFlow, just math and code.
+**Author:** Pulkit Jain — BITS Pilani | Mathematics & Computing · Physics
+
+> A low-level Machine Learning engine built in Modern Fortran — no PyTorch, no Scikit-Learn, just raw matrix calculus, gradient descent, and feature engineering.
 
 ---
 
 ## 📌 Overview
 
-This repository implements a **Non-Linear Binary Classifier** that combines:
+This repository implements a **Non-Linear Binary Classifier** — a single-neuron engine capable of learning non-linear decision boundaries using:
 
-- **Logistic Regression** — for probabilistic decision-making
-- **Polynomial Feature Expansion** — to handle non-linear data patterns
+- **Logistic Regression** — probabilistic decision-making via Sigmoid activation
+- **Polynomial Feature Mapping** — transforms 1D input into an $N$-dimensional feature space
+- **L2 Regularization (Ridge)** — prevents overfitting on high-degree polynomial models
+- **Vectorized Matrix Operations** — the entire dataset is treated as a matrix $X$, with weights as a vector $w$
 
-By using **Fortran 2008/2018**, this project focuses on understanding the mathematical and computational foundations of machine learning at the lowest practical level.
+The engine moves beyond linear classification by combining these techniques into a clean, modular Fortran architecture.
+
+---
+
+## 📂 Repository Structure
+
+```
+AI-form-scratch/
+├── linear_regression/
+│   └── logistic_regression.f90   # Core math module: Fit, Standardize, Sigmoid, Accuracy
+├── polynomial_regression/
+│   └── polynomialreg.f90         # Main orchestrator & polynomial feature generator
+├── makefile                      # Build system
+└── README.md
+```
 
 ---
 
@@ -19,74 +37,54 @@ By using **Fortran 2008/2018**, this project focuses on understanding the mathem
 
 | Feature | Description |
 |---|---|
-| **Polynomial Expansion** | Transforms 1D input data into an $N$-degree feature matrix |
-| **Z-Score Standardization** | Scales features to mean = 0, S.D. = 1 to prevent numerical overflow |
-| **Gradient Descent** | Optimized using Fortran's `do concurrent` for parallel-ready performance |
-| **Modular Architecture** | Math engine (`Logistic`) and feature generator (`Polynomial`) are fully separated |
+| **Polynomial Expansion** | Transforms scalar input $x$ into $(x, x^2, \dots, x^D)$ — a $D$-dimensional feature space |
+| **Vectorized Predictions** | Computes $\hat{y} = \sigma(Xw + b)$ as a single matrix operation |
+| **Z-Score Standardization** | Scales all features to mean $= 0$, S.D. $= 1$ to prevent gradient explosion |
+| **L2 Regularization** | Adds a weight-decay penalty to the loss to combat overfitting |
+| **Gradient Descent** | Optimized with Fortran's `do concurrent` for parallel-ready performance |
+| **Modular Architecture** | Math engine (`logistic_regression`) and feature generator (`polynomialreg`) fully separated |
 
 ---
 
-## 🛠️ Design Choices
+## 🛠️ Design Choices & Architecture
 
 ### 1. Why Fortran?
 
-While C is the common choice for low-level work, Fortran was selected for its:
+Python is standard for AI, but Fortran was chosen for its native high-performance array handling. Built-in functions like `matmul()`, `transpose()`, and `do concurrent` allow this engine to perform matrix operations at near-hardware speeds — a natural precursor to future GPU implementation.
 
-- **Native multidimensional array handling** — no pointer arithmetic required
-- **Clean mathematical syntax** — expressions like $W \cdot X + b$ map directly to code
-- **High-performance numerical operations** — built for scientific computing
+### 2. Multivariate Matrix Logic (Vectorization)
 
-### 2. Feature Scaling (Standardization)
+Instead of looping through individual samples, the engine treats the entire dataset as a single matrix operation:
 
-Polynomial features ($x,\ x^2,\ x^3,\ \dots$) grow at vastly different magnitudes. Without standardization, high-degree terms dominate the gradient and cause the model to **diverge during training**.
+$$\hat{y} = \sigma(Xw + b)$$
 
-The `standardize` subroutine scales all features before they reach the optimizer.
+This eliminates per-sample loops and enables significant computational speedups on large datasets.
 
-### 3. Activation Function
+### 3. Polynomial Feature Mapping
 
-A **Sigmoid** activation function transforms the raw linear output into a probability in the range $(0, 1)$. This converts the curve-fitter into a classifier capable of making binary "Yes/No" decisions.
+To solve non-linear problems (like the parabola test), the `Polynomial_reg` module transforms a scalar input $x$ into a $D$-dimensional vector:
+
+$$x \rightarrow (x,\ x^2,\ x^3,\ \dots,\ x^D)$$
+
+This allows a linear classifier to find **non-linear decision boundaries** in the original input space.
+
+### 4. L2 Regularization (Ridge)
+
+High-degree polynomials are prone to overfitting — they become too "jagged" trying to pass through every data point. L2 regularization adds a penalty term to both the loss and the gradient:
+
+$$dw = \frac{1}{m} X^T(\hat{y} - y) + \frac{\lambda}{m}w$$
+
+This **weight decay** forces the model to prefer smaller weights, producing smoother, more generalizable curves.
+
+### 5. Z-Score Standardization
+
+Polynomial terms like $x^{10}$ can be exponentially larger than $x^1$. Without scaling, the gradient explodes and training fails with `NaN`. The saved `mean` and `std` from training are also applied at prediction time so the input speaks the same language as the learned weights.
+
+### 6. Sigmoid Activation
 
 $$\sigma(z) = \frac{1}{1 + e^{-z}}$$
 
----
-
-## ⚠️ Mistakes & Lessons Learned
-
-<details>
-<summary><strong>The <code>main</code> Conflict</strong></summary>
-
-**Mistake:** `program main` was defined in both the module file and the application file, causing a *"multiple definition of main"* linker error.
-
-**Fix:** Separated all math logic into pure modules; kept execution logic in a single `program` file.
-
-</details>
-
-<details>
-<summary><strong>Compilation Flag Errors</strong></summary>
-
-**Mistake:** Used the `-I` flag pointing directly to `.f90` and `.exe` files.
-
-**Fix:** `-I` is for directories containing compiled `.mod` files. Compiling the module and program together in one command is simpler and avoids this entirely.
-
-</details>
-
-<details>
-<summary><strong>Memory Management</strong></summary>
-
-**Mistake:** Attempted to access `x_input` and `weight` arrays before allocating them, causing runtime crashes.
-
-**Fix:** Dynamic allocation with `allocate()` is now performed *after* the user provides the polynomial degree and sample size.
-
-</details>
-
-<details>
-<summary><strong>Hyperparameter Tuning</strong></summary>
-
-**Mistake:** A learning rate of `0.001` was too slow for the small dataset — the model barely converged.
-
-**Fix:** A rate of `0.1` provided significantly faster convergence for the "U-shape" test case.
-
-</details>
+Maps any real-valued output to a probability in $(0, 1)$, turning the regression into a binary classifier.
 
 ---
 
@@ -94,17 +92,21 @@ $$\sigma(z) = \frac{1}{1 + e^{-z}}$$
 
 Ensure `gfortran` is installed (via MinGW/MSYS2 on Windows, or natively on Linux/macOS).
 
-```powershell
-gfortran -O3 ..\linear_regression\logistic_regression.f90 .\polynomialreg.f90 -o polyreg.exe
+**Using Make:**
+```bash
+make
+```
+
+**Manual compilation:**
+```bash
+gfortran -O3 linear_regression/logistic_regression.f90 polynomial_regression/polynomialreg.f90 -o polyreg.exe
 ```
 
 ---
 
-## 📈 Example Result — The U-Shape Test
+## 📊 Test Case: The Parabola
 
-The model successfully learns non-linear patterns that standard linear regression cannot capture.
-
-**Input Data:**
+The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ in the center — a non-linear boundary no linear model can learn.
 
 | $x$ | Label |
 |-----|-------|
@@ -112,20 +114,84 @@ The model successfully learns non-linear patterns that standard linear regressio
 | 5   | 1     |
 | 9   | 0     |
 
-**Logic:** The positive class is concentrated in the center — a classic non-linear boundary.
+**Result:** The model correctly suppressed the linear weight (Weight $\approx 0$) and assigned a strong positive weight to the $x^2$ term, confirming it learned the parabolic structure.
 
-**Result:** Achieved a final loss of $\approx 0.07$ with high classification confidence on all three points.
+| Metric | Value |
+|--------|-------|
+| Initial Loss | $\approx 0.69$ (random baseline) |
+| Final Loss | $\approx 0.08$ |
+
+---
+
+## ⚠️ Mistakes & Lessons Learned
+
+<details>
+<summary><strong>1. "Actual vs Formal" Argument Mismatch</strong></summary>
+
+**Error:** The `main` program passed `lamda` to `subroutine fit`, but the subroutine interface wasn't updated to receive it — causing a silent mismatch.
+
+**Fix:** Synchronized the module interface and used a clean-recompile strategy to ensure `.mod` files were fully regenerated.
+
+</details>
+
+<details>
+<summary><strong>2. Scalar Penalty in the Gradient</strong></summary>
+
+**Error:** Used `sum(weight)` in the L2 gradient calculation — this collapsed all weights into one scalar, destroying per-feature precision.
+
+**Fix:** Corrected to use the full vector `weight` for an element-wise penalty.
+
+</details>
+
+<details>
+<summary><strong>3. The <code>main</code> Conflict</strong></summary>
+
+**Error:** `program main` was defined in both the module file and the application file, causing a *"multiple definition of main"* linker error.
+
+**Fix:** Separated all math logic into pure modules; kept execution logic in a single `program` file.
+
+</details>
+
+<details>
+<summary><strong>4. Memory Allocation Crashes</strong></summary>
+
+**Error:** Attempted to access `x_poly` and `weight` arrays before the user had provided `degree` and `sample_size`.
+
+**Fix:** All `allocate()` calls now happen after runtime input is collected.
+
+</details>
+
+<details>
+<summary><strong>5. Standardization Not Applied at Prediction Time</strong></summary>
+
+**Error:** The model predicted on raw input values, while the weights were trained on standardized features — a systematic mismatch.
+
+**Fix:** The `mean` and `std` computed during training are saved and reapplied to every input at prediction time.
+
+</details>
+
+<details>
+<summary><strong>6. Compilation Flag Errors</strong></summary>
+
+**Error:** Used the `-I` flag pointing to `.f90` and `.exe` files directly.
+
+**Fix:** `-I` is for directories containing compiled `.mod` files. Compiling the module and program together in a single command is cleaner.
+
+</details>
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Implement Vectorized Backpropagation
-- [ ] Add Multi-class Classification support (Softmax)
-- [ ] Link with BLAS/LAPACK for optimized matrix operations
+- [x] Phase 1 — Polynomial Logistic Regression with L2 Regularization
+- [ ] Phase 2 — Multi-layer Neural Network (Hidden Layers)
+- [ ] Phase 3 — Vectorized Backpropagation algorithm
+- [ ] Phase 4 — Multi-class Classification (Softmax)
+- [ ] Phase 5 — CUDA/GPU acceleration for large matrices
+- [ ] Phase 6 — Link with BLAS/LAPACK for optimized matrix operations
 
 ---
 
 ## 🔗 Part of the *AI From Scratch* Series
 
-This project is one step in a larger journey to build AI primitives from first principles using low-level languages. Each module builds on the last, with full transparency into mistakes, corrections, and design rationale.
+This project is one step in a larger journey to build AI primitives from first principles using low-level languages. Each module builds on the last — with full transparency into design decisions, mathematical derivations, and hard-won lessons from real bugs.
