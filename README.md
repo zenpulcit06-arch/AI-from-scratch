@@ -1,4 +1,4 @@
-# 🤖 AI From Scratch: Vectorized Polynomial & Logistic Regression (Fortran)
+# AI From Scratch: Vectorized Polynomial & Logistic Regression (Fortran)
 
 **Author:** Pulkit Jain — BITS Pilani |  Physics
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 Overview
+## Overview
 
 This repository implements a **Non-Linear Binary Classifier** — a single-neuron engine capable of learning non-linear decision boundaries using:
 
@@ -19,7 +19,7 @@ The engine moves beyond linear classification by combining these techniques into
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```
 AI-form-scratch/
@@ -33,7 +33,7 @@ AI-form-scratch/
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---|---|
@@ -46,7 +46,7 @@ AI-form-scratch/
 
 ---
 
-## 🛠️ Design Choices & Architecture
+## Design Choices & Architecture
 
 ### 1. Why Fortran?
 
@@ -88,7 +88,7 @@ Maps any real-valued output to a probability in $(0, 1)$, turning the regression
 
 ---
 
-## 🏗️ How to Compile
+## How to Compile
 
 Ensure `gfortran` is installed (via MinGW/MSYS2 on Windows, or natively on Linux/macOS).
 
@@ -104,7 +104,7 @@ gfortran -O3 linear_regression/logistic_regression.f90 polynomial_regression/pol
 
 ---
 
-## 📊 Test Case: The Parabola
+## Test Case: The Parabola
 
 The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ in the center — a non-linear boundary no linear model can learn.
 
@@ -123,7 +123,7 @@ The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ i
 
 ---
 
-## ⚠️ Mistakes & Lessons Learned
+## Mistakes & Lessons Learned
 
 <details>
 <summary><strong>1. "Actual vs Formal" Argument Mismatch</strong></summary>
@@ -181,7 +181,7 @@ The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ i
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Phase 1 — Polynomial Logistic Regression with L2 Regularization
 - [ ] Phase 2 — Multi-layer Neural Network (Hidden Layers)
@@ -192,6 +192,6 @@ The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ i
 
 ---
 
-## 🔗 Part of the *AI From Scratch* Series
+## Part of the *AI From Scratch* Series
 
 This project is one step in a larger journey to build AI primitives from first principles using low-level languages. Each module builds on the last — with full transparency into design decisions, mathematical derivations, and hard-won lessons from real bugs.
