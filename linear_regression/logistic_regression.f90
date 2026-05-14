@@ -13,11 +13,12 @@ subroutine fit(y,x,size_of_data, rate_of_learn, n_feature , weight , bias,iterat
     real(real64), intent(inout) :: loss , mse
     real(real64), intent(in) :: rate_of_learn , lamda
     integer(int64), intent(in) :: size_of_data, iteration, n_feature
-    integer :: i
+    integer(int64) :: i
     real(real64), intent(inout) :: weight(:)
-    real(real64) :: dw(n_feature), db , last_loss = 0
+    real(real64) :: dw(n_feature), db , last_loss
     real(real64), allocatable :: y_predicted(:) 
 
+    last_loss = 0.0_real64
     weight(:) = 0.0_real64
     bias = 0.0_real64
     allocate(y_predicted(size_of_data))
@@ -90,16 +91,21 @@ elemental function sigmoid(z) result(sigma)
     sigma = 1.0_real64/(1.0_real64 + exp(-z))
 end function 
 
-function accuracy(sigma, y,weight,bias, size_of_sample) result(acc_data)
+function accuracy(x_scaled, y,weight,bias, size_of_sample) result(acc_data)
     use, intrinsic :: iso_fortran_env
 
     implicit none
     integer(int64), intent(in) :: size_of_sample
-    real(real64), intent(in) :: sigma (:,:), y(:) , weight (:) , bias
+    real(real64), intent(in) :: x_scaled (:,:), y(:) , weight (:) , bias
     real(real64) :: acc_data(3), y_predicted(size_of_sample)
-    integer(int64) :: i, tp = 0,tn = 0,fp = 0,fn = 0
+    integer(int64) :: i, tp,tn,fp,fn
+    
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
 
-    y_predicted = sigmoid(matmul(sigma,weight) + bias)
+    y_predicted = sigmoid(matmul(x_scaled,weight) + bias)
 
     do  i = 1,size_of_sample
         if ( y_predicted(i) .ge. 0.5 .and. y(i) .eq. 1 ) then

@@ -11,7 +11,7 @@ all: $(TARGET)
 
 $(TARGET): $(SOURCES)
 	if not exist $(MODDIR) mkdir $(MODDIR)
-	$(FC) $(FFLAGS) $(SOURCES) -o $(TARGET) -J$(MODDIR) 
+	$(FC) $(FFLAGS) $(SOURCES) -o $(TARGET) -J$(MODDIR) -Wall -fcheck=all
 
 # Clean up build artifacts (Windows syntax)
 clean:
