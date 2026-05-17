@@ -104,7 +104,9 @@ gfortran -O3 linear_regression/logistic_regression.f90 polynomial_regression/pol
 
 ---
 
-## Test Case: The Parabola
+## Test Cases
+
+### Test Case 1: The Parabola
 
 The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ in the center — a non-linear boundary no linear model can learn.
 
@@ -120,6 +122,57 @@ The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ i
 |--------|-------|
 | Initial Loss | $\approx 0.69$ (random baseline) |
 | Final Loss | $\approx 0.08$ |
+
+---
+
+### Test Case 2: The Circle (`circle.csv`)
+
+A 2D radial dataset with 50 points — inner points labelled 0 (near origin) and outer points labelled 1 (away from origin). This tests the engine on a genuinely 2D non-linear boundary using degree-2 polynomial features.
+
+**Run configuration:**
+
+| Parameter | Value |
+|-----------|-------|
+| Dataset | `circle.csv` (50 samples) |
+| Degree | 2 |
+| Learning Rate | 0.01 |
+| Lambda (L2) | 0.001 |
+| Iterations | 500,000 |
+
+**Training output:**
+
+The loss converged smoothly from an initial ~0.387 down to ~0.310, with early stopping triggered when the change per step fell below $10^{-8}$:
+
+```
+0.38657  →  0.33696  →  0.32221  →  0.31632  →  ...  →  0.30963
+```
+
+**Learned parameters:**
+
+| Parameter | Value |
+|-----------|-------|
+| Weight 1 ($x$) | 0.9971 |
+| Weight 2 ($x^2$) | 0.2594 |
+| Bias | −2.3377 |
+| Mean $(x,\ x^2)$ | 0.0480, 0.5716 |
+| S.D. $(x,\ x^2)$ | 0.7545, 0.6768 |
+
+**Final metrics:**
+
+| Metric | Value |
+|--------|-------|
+| Final Loss | 0.3096 |
+| MSE | 0.5019 |
+
+**Sample prediction:**
+
+```
+Input: x = 2.0
+Probability: 0.826
+Classification: POSITIVE (1)
+```
+
+**Observations:** The relatively high MSE (~0.50) indicates the degree-2 polynomial expansion of a single coordinate is not expressive enough to fully capture a 2D radial boundary. The `circle.csv` dataset is inherently a 2-feature problem ($x_1$, $x_2$), where the true decision boundary is $x_1^2 + x_2^2 = r^2$. A proper solution would require reading both columns and expanding into cross-terms $(x_1,\ x_2,\ x_1^2,\ x_2^2,\ x_1 x_2)$. This test case motivates **Phase 2**: extending the engine to accept multi-feature input natively.
 
 ---
 
@@ -179,16 +232,26 @@ The engine was verified on a dataset where $y = 1$ at the extremes and $y = 0$ i
 
 </details>
 
+<details>
+<summary><strong>7. Single-Column Input Cannot Model 2D Boundaries</strong></summary>
+
+**Error:** Fed only the first column of `circle.csv` into the engine — the model saw one coordinate of each point but not both, making it structurally impossible to learn a radial boundary.
+
+**Insight:** The high MSE (~0.50) on the circle dataset is a feature, not a bug — it correctly reveals the engine's current limitation. True 2D classification requires reading both $x_1$ and $x_2$ and computing cross-polynomial terms. This is the motivation for the multi-feature extension in Phase 2.
+
+</details>
+
 ---
 
 ## Roadmap
 
 - [x] Phase 1 — Polynomial Logistic Regression with L2 Regularization
-- [ ] Phase 2 — Multi-layer Neural Network (Hidden Layers)
-- [ ] Phase 3 — Vectorized Backpropagation algorithm
-- [ ] Phase 4 — Multi-class Classification (Softmax)
-- [ ] Phase 5 — CUDA/GPU acceleration for large matrices
-- [ ] Phase 6 — Link with BLAS/LAPACK for optimized matrix operations
+- [ ] Phase 2 — Multi-feature input support (read all columns; cross-polynomial terms)
+- [ ] Phase 3 — Multi-layer Neural Network (Hidden Layers)
+- [ ] Phase 4 — Vectorized Backpropagation algorithm
+- [ ] Phase 5 — Multi-class Classification (Softmax)
+- [ ] Phase 6 — CUDA/GPU acceleration for large matrices
+- [ ] Phase 7 — Link with BLAS/LAPACK for optimized matrix operations
 
 ---
 
